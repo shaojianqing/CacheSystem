@@ -1,14 +1,11 @@
 #include "../const/const.h"
 #include "../type/type.h"
+#include "dataType.h"
 
 #define LIMIT_FACTOR 0.75
 
 #define STATUS_SUCCESS	1
 #define STATUS_FAILURE  0
-
-typedef u32 (*HashCode)(Object *key);
-
-typedef bool (*EqualFun)(Object *obj1, Object *obj2);
 
 typedef struct Entry Entry;
 
@@ -54,6 +51,8 @@ typedef struct HashMap {
 
 HashMap* createHashMap(HashCode hashCode, EqualFun equalFun, u32 capacity);
 
-u32 StringHashCode(Object *string);
+void destroyHashMap(HashMap* this);
+
+int StringHashCode(Object *string);
 
 bool StringEqualFun(Object *obj1, Object *obj2);
