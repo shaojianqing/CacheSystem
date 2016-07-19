@@ -12,7 +12,7 @@ TARGET = cacheServer
 
 TGT = tgt/*
 
-OBJS = tgt/cacheServer.o tgt/hashMap.o tgt/dataType.o tgt/arrayList.o
+OBJS = tgt/cacheServer.o tgt/hashMap.o tgt/dataType.o tgt/arrayList.o tgt/network.o
 
 .PHONY : build clean
 
@@ -20,6 +20,9 @@ build : clean $(TARGET)
 
 clean :
 	 rm -f $(TARGET) $(TGT)
+
+tgt/network.o : src/inet/network.c src/inet/network.h
+	$(CC) $(CCFLAGES) $< -o $@
 
 tgt/dataType.o : src/data/dataType.c src/data/dataType.h
 	$(CC) $(CCFLAGES) $< -o $@
@@ -33,5 +36,7 @@ tgt/hashMap.o : src/data/hashMap.c src/data/hashMap.h
 tgt/cacheServer.o : src/cacheServer.c src/cacheServer.h
 	$(CC) $(CCFLAGES) $< -o $@
 
-cacheServer : tgt/cacheServer.o tgt/hashMap.o tgt/dataType.o tgt/arrayList.o
+cacheServer : tgt/cacheServer.o tgt/hashMap.o tgt/dataType.o tgt/arrayList.o tgt/network.o
 	$(CC) $(OBJS) -o $@
+
+
