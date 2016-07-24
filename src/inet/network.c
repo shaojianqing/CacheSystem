@@ -1,22 +1,19 @@
-#include <netinet/in.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
-#include <sys/types.h>
+#include <arpa/inet.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <memory.h>
-#include <fcntl.h>
 #include <stdio.h>
 #include <errno.h>
 
-#include "../const/const.h"
 #include "../type/type.h"
+#include "../event/event.h"
+#include "../config/config.h"
+#include "../const/const.h"
 #include "network.h"
 
-char sendBuffer[1024];
-
-char receiveBuffer[1024];
+extern Server server;
 
 int serverSocketFd;
 
@@ -24,29 +21,22 @@ int clientSocketFd;
 
 int addressLength;
 
-SocketInetAddress serverAddress;
-
-SocketInetAddress clientAddress;
-
 EpollEvent serverEvent;
 
 EpollEvent clientEvent;
 
 EpollEvent targetEvent[MAX_CONNECT];
 
-int makeSocketNoBlock(int socketFd);
+int prepareServerSocket() {
 
-void startService() {
-	
-	memset(&sendBuffer, 0, sizeof(sendBuffer));
-	memset(&receiveBuffer, 0, sizeof(receiveBuffer));
+	SocketInetAddress serverAddress, clientAddress;
 
 	int serverSocketFd = socket(AF_INET, SOCK_STREAM, 0);
 	if (serverSocketFd==-1) {
-		perror("Create Socket Error!");
-		exit(0);
+		printLog(LEVEL_ERROR, "Create Socket Error!");
+		return -1;
 	} else {
-		printf("Create Socket Successfully^_^\n");	
+		printLog(LEVEL_INFO, "Create Socket Successfully^_^");	
 	}
 	memset(&serverAddress, 0, sizeof(serverAddress));
 	memset(&clientAddress, 0, sizeof(clientAddress));
@@ -57,43 +47,99 @@ void startService() {
 
 	int status = bind(serverSocketFd, (SocketAddress *)&serverAddress, sizeof(SocketAddress));
 	if (status==-1) {
-		perror("Bind Socket Error!");
-		exit(0);	
+		printLog(LEVEL_ERROR, "Bind Socket Error!");
+		return -1;	
 	} else {
-		printf("Bind Socket Successfully^_^\n");	
-	}
-
-	status = makeSocketNoBlock(serverSocketFd);
-	if (status==-1) {
-		perror("Make Socket No Block Error!");
-		exit(0);
+		printLog(LEVEL_INFO, "Bind Socket Successfully^_^");	
 	}
 
 	status = listen(serverSocketFd, 20);
 	if (status==-1) {
-		perror("Bind Socket Error!");
+		printLog(LEVEL_ERROR, "Bind Socket Error:");
+		return -1;	
+	} else {
+		printLog(LEVEL_INFO, "Start to Listen Successfully^_^");
+	}
+	return serverSocketFd;
+}
+
+int acceptClientConn(int serverFd, char *ip, int *port) {
+	int clientFd = 0;
+	SocketInetAddress address;
+	u32 addressLength = sizeof(SocketInetAddress);
+	while(true) {
+		clientFd = accept(serverFd, (SocketAddress *)&address, &addressLength);
+		if (clientFd==-1) {
+			if (errno==EINTR) {
+				continue;			
+			} else {
+				printLog(LEVEL_ERROR, "Accept Connection Error:");
+				return INET_ERROR;
+			}
+		}
+		break;
+	}
+	if (ip!=NULL) {
+		strcpy(ip, inet_ntoa(address.sin_addr));	
+	}
+	if (port!=NULL) {
+		*port = ntohs(address.sin_port);	
+	}
+	return clientFd;
+}
+
+void startDataService() {
+	
+	/*memset(&sendBuffer, 0, sizeof(sendBuffer));
+	memset(&receiveBuffer, 0, sizeof(receiveBuffer));
+
+	int serverSocketFd = socket(AF_INET, SOCK_STREAM, 0);
+	if (serverSocketFd==-1) {
+		printLog(LEVEL_ERROR, "Create Socket Error!");
+		exit(0);
+	} else {
+		printLog(LEVEL_INFO, "Create Socket Successfully^_^");	
+	}
+	memset(&serverAddress, 0, sizeof(serverAddress));
+	memset(&clientAddress, 0, sizeof(clientAddress));
+	
+	serverAddress.sin_family = AF_INET;
+	serverAddress.sin_addr.s_addr = htonl(INADDR_ANY);
+	serverAddress.sin_port = htons(SERVER_PORT);
+
+	int status = bind(serverSocketFd, (SocketAddress *)&serverAddress, sizeof(SocketAddress));
+	if (status==-1) {
+		printLog(LEVEL_ERROR, "Bind Socket Error!");
 		exit(0);	
 	} else {
-		printf("Start to Listen Successfully^_^\n");
+		printLog(LEVEL_INFO, "Bind Socket Successfully^_^");	
+	}
+
+	status = listen(serverSocketFd, 20);
+	if (status==-1) {
+		printLog(LEVEL_ERROR, "Bind Socket Error!");
+		exit(0);	
+	} else {
+		printLog(LEVEL_INFO, "Start to Listen Successfully^_^");
 	}
 
 	int epollFd = epoll_create(MAX_CONNECT);
 	if (epollFd==-1) {
-		perror("Create Epoll Error");
+		printLog(LEVEL_ERROR, "Create Epoll Error");
 		exit(0);	
 	} else {
-		printf("Create Epoll Successfully^_^\n");		
+		printLog(LEVEL_INFO, "Create Epoll Successfully^_^");		
 	}
 
 	serverEvent.data.fd = serverSocketFd;
-	serverEvent.events = EPOLLIN | EPOLLET;
+	serverEvent.events = EPOLLIN;
 
 	status = epoll_ctl(epollFd, EPOLL_CTL_ADD, serverSocketFd, &serverEvent);  
   	if (status == -1) {  
-      	perror ("Epoll_ctl Error");  
+      	printLog(LEVEL_ERROR, "Epoll_ctl Error");  
       	exit(0);	
     } else {
-		printf("Epoll_ctl Successfully^_^\n");
+		printLog(LEVEL_INFO, "Epoll_ctl Successfully^_^");
 	}
 
 	while (true) {
@@ -104,87 +150,66 @@ void startService() {
               	(targetEvent[i].events & EPOLLHUP) ||
               	(!(targetEvent[i].events & EPOLLIN))) 
 	    	{
-				  perror("epoll error");
-				  close (targetEvent[i].data.fd);
-				  continue;
+				printLog(LEVEL_ERROR, "Epoll Event error");
+				close (targetEvent[i].data.fd);
+				continue;
 	    	} else if (serverSocketFd==targetEvent[i].data.fd) {
 
-              while (true) {
-				  	addressLength = sizeof(SocketAddress);
-				  	clientSocketFd = accept(serverSocketFd, (SocketAddress *)&clientAddress, &addressLength);
-                  	if(clientSocketFd == -1) {
-                      	if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
-                          break;
-                      	} else {
-                          perror ("accept");
-                          break;
-                      	}
-                    } else {
-						printf("Client Connection Accepted ^_^\n");
-					}
-                  	status = makeSocketNoBlock(clientSocketFd);
-                  	if (status == -1) {
-						exit(0);					
-					}
 
-		            clientEvent.data.fd = clientSocketFd;
-		            clientEvent.events = EPOLLIN|EPOLLET;
-                    status = epoll_ctl(epollFd, EPOLL_CTL_ADD, clientSocketFd, &clientEvent);
-                  	if (status == -1) {
-                      	perror ("epoll_ctl");
-                      	exit(0);
-                    }
-                }
-              continue;
+				printf("serverSocketFd:%d\n", serverSocketFd);
+				printf("targetEvent[i].data.fd:%d\n", targetEvent[i].data.fd);
+
+
+				addressLength = sizeof(SocketAddress);
+				clientSocketFd = accept(serverSocketFd, (SocketAddress *)&clientAddress, &addressLength);
+				if(clientSocketFd == -1) {
+				  	if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+				  	} else {
+					  printLog(LEVEL_ERROR, "Accept Error");
+				  	}
+				} else {
+					printLog(LEVEL_INFO, "Client Connection Accepted ^_^");
+				}
+
+				clientEvent.data.fd = clientSocketFd;
+				clientEvent.events = EPOLLIN;
+				status = epoll_ctl(epollFd, EPOLL_CTL_ADD, clientSocketFd, &clientEvent);
+				if (status == -1) {
+				  	printLog(LEVEL_ERROR, "Epoll_ctl Error");
+				  	exit(0);
+				}
             } else {
-              int done = 0;
-              while (true) {
-                  long count;
-                  char buf[512];
+				int done = 0;
+				while (true) {
+				  long count;
+				  char buf[512];
 
-                  count = read (targetEvent[i].data.fd, receiveBuffer, sizeof(receiveBuffer));
-                  if(count == -1) {
-                      if (errno != EAGAIN) {
-                          perror ("read");
-                          done = 1;
-                      }
-                      break;
-                  } else if(count == 0) {
-                      done = 1;
-                      break;
-                  }
-                  long writeBytes = write(1, receiveBuffer, count);
-                  if (writeBytes == -1) {
-                      perror ("write");
-                      exit(0);
-                  }
-              }
+				  count = read(targetEvent[i].data.fd, receiveBuffer, sizeof(receiveBuffer));
+				  if(count == -1) {
+					  if (errno != EAGAIN) {
+						  printLog(LEVEL_ERROR, "read");
+						  done = 1;
+					  }
+					  break;
+				  } else if(count == 0) {
+					  done = 1;
+					  break;
+				  }
+				  u64 writeBytes = write(1, sendBuffer, count);
+				  if (writeBytes == -1) {
+					  printLog(LEVEL_ERROR, "Write Error");
+					  exit(0);
+				  }
 
-              if(done) {
-                  printf ("Closed connection on descriptor %d\n", targetEvent[i].data.fd);
-                  close (targetEvent[i].data.fd);
-              }
+				  printLog(LEVEL_INFO, receiveBuffer);
+				}
+
+				if(done) {
+				  printLog(LEVEL_INFO, "Closed Connection on Descriptor");
+				  close (targetEvent[i].data.fd);
+				}
 		   }
         }
-	}	
+	}*/
 }
-
-int makeSocketNoBlock(int socketFd) {
-	int flags, s;
-
-	flags = fcntl(socketFd, F_GETFL, 0);
-	if (flags == -1) {
-		perror ("fcntl");
-		return -1;
-	}
-
-	flags |= O_NONBLOCK;
-	s = fcntl (socketFd, F_SETFL, flags);
-	if (s == -1) {
-		perror ("fcntl");
-		return -1;
-	}
-	return 0;
-}
-
 
