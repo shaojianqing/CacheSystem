@@ -1,4 +1,3 @@
-#define SERVER_PORT 			8888
 #define MAX_CONNECT				1024
 
 #define INET_ERROR				-1

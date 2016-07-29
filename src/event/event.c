@@ -11,6 +11,8 @@ static EpollState* createEpollState();
 
 static bool registeEpollEvent(EventLoop *loop, int fd, int mask);
 
+static bool unregisteEpollEvent(EventLoop *eventLoop, int fd, int delMask);
+
 static void processTimeEvent(EventLoop *eventLoop);
 
 static void processFileEvent(EventLoop *eventLoop);
@@ -75,6 +77,14 @@ void createTimeEvent(EventLoop *eventLoop, TimeProcessor processor, u64 time, Ob
 	}
 }
 
+void deleteFileEvent(EventLoop *eventLoop, int fd, int mask) {
+	if (eventLoop!=NULL && fd>0 && fd<EVENT_SIZE && mask!=EVENT_NONE) {
+		FileEvent *fileEvent = &(eventLoop->fileEventList[fd]);
+		fileEvent->mask = fileEvent->mask & (~mask);
+		unregisteEpollEvent(eventLoop, fd, mask);
+	}
+}
+
 static bool registeEpollEvent(EventLoop *eventLoop, int fd, int mask) {
 	if (eventLoop!=NULL) {
 		EpollState *epollState = eventLoop->epollState;
@@ -87,10 +97,10 @@ static bool registeEpollEvent(EventLoop *eventLoop, int fd, int mask) {
 
 		mask |= fileEvent.mask;
 		if (mask & EVENT_READ_ABLE) {
-			epollEvent.events = EPOLLIN;
+			epollEvent.events |= EPOLLIN;
 		}
 		if (mask & EVENT_WRITE_ABLE) {
-			epollEvent.events = EPOLLOUT;
+			epollEvent.events |= EPOLLOUT;
 		}
 		if (epoll_ctl(epollState->epollFd, operator, fd, &epollEvent)==-1) {
 			return false;		
@@ -99,6 +109,26 @@ static bool registeEpollEvent(EventLoop *eventLoop, int fd, int mask) {
 		}
 	}
 	return false;
+}
+
+static bool unregisteEpollEvent(EventLoop *eventLoop, int fd, int delMask) {
+	EpollState *epollState = eventLoop->epollState;
+	EpollEvent epollEvent;
+
+	FileEvent fileEvent = eventLoop->fileEventList[fd];
+	int operator = (fileEvent.mask==EVENT_NONE?EPOLL_CTL_DEL:EPOLL_CTL_MOD);
+	int mask = fileEvent.mask & (~delMask);
+	
+	epollEvent.events = 0;
+	epollEvent.data.fd = fd;
+    if (mask & EVENT_READ_ABLE) {
+		 epollEvent.events |= EPOLLIN;
+	}
+    if (mask & EVENT_WRITE_ABLE) {
+		 epollEvent.events |= EPOLLOUT;
+	}
+
+	epoll_ctl(epollState->epollFd, operator, fd, &epollEvent);	
 }
 
 static int processEpollEvent(EventLoop *eventLoop) {

@@ -7,32 +7,69 @@
 
 #include "../type/type.h"
 #include "../event/event.h"
+#include "../data/stringType.h"
+#include "../cache/cacheDB.h"
 #include "../client/client.h"
 #include "config.h"
 
 Server server;
 
+ReplyInfo replyInfo;
+
 void timingHandler(EventLoop *eventLoop, TimeEvent *timeEvent, Object *client);
 
 void acceptConnHandler(EventLoop *eventLoop, int fd, int mask, Object *client);
 
-void initServerConfig() {
-	server.serverPort = 8888;
+void loadServerConfig(const char *filename);
+
+void initDefaultConfig() {
+	server.serverPort = 6379;
 	server.logFile = NULL;//"/home/shaojianqing/CacheSystem/cache.log";
 	server.timeSlice = TIME_SLICE;
 	server.times = 0;
 }
 
+void initRepyInfomation() {
+	replyInfo.ok = createString("+OK\r\n");
+	replyInfo.err = createString("-ERR\r\n");
+	replyInfo.noKeyErr = createString("-ERR no such key\r\n");
+	replyInfo.synTaxErr = createString("-ERR syntax error\r\n");
+}
+
+void initServerConfig(int argc, char **argv) {
+	initDefaultConfig();
+	initRepyInfomation();
+	if (argc==2) {
+		char *content = argv[1];
+		if (strcmp(content, "-h")==0) {
+			printHelpInfo();
+			exit(0);		
+		} else {
+			char *configFilename = content;
+			loadServerConfig(configFilename);		
+		}		
+	} else if (argc==1) {
+		char *info = "No config file is specified, the server will load the default config!";
+		printLog(LEVEL_WARN, info);
+	} else {
+		char *info = "The input command is invalid!";
+		printLog(LEVEL_ERROR, info);
+	}
+}
+
 void initServerFacility() {
+	server.cacheDB = createCacheDB();
 	server.eventLoop = createEventLoop();
 	server.serverFd = prepareServerSocket();
 	createTimeEvent(server.eventLoop, timingHandler, TIME_SLICE, NULL);
 	createFileEvent(server.eventLoop, server.serverFd, EVENT_READ_ABLE, acceptConnHandler, NULL);
+
+	printLog(LEVEL_INFO, "Cache Service is now running^_^");
 }
 
 void loadServerConfig(const char *filename) {
 	if (filename!=NULL) {
-	
+		
 	}
 }
 
@@ -85,9 +122,8 @@ void acceptConnHandler(EventLoop *eventLoop, int fd, int mask, Object *client) {
 	if (clientFd!=-1) {
 		sprintf(msg, "Connecting client address:%s, port:%d\n", ip, port);
 		printLog(LEVEL_INFO, msg);
-		Client *client = (Client *)malloc(sizeof(Client));
+		Client *client = createClient(clientFd);
 		if (client!=NULL) {
-			client->clientFd = clientFd;
 			createFileEvent(eventLoop, clientFd, EVENT_READ_ABLE, processClientCommand, client);
 		}
 	}

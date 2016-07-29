@@ -4,6 +4,12 @@
 
 #define TIME_SLICE			100
 
+typedef struct EventLoop EventLoop;
+
+typedef struct CacheDB CacheDB;
+
+typedef struct String String;
+
 typedef struct Server {
 
 	u32 serverPort;
@@ -20,9 +26,23 @@ typedef struct Server {
 
 	u64 timeSlice;
 
+	CacheDB *cacheDB;
+
 } Server;
 
-void initServerConfig();
+typedef struct ReplyInfo {
+
+	String *ok;
+
+	String *err;
+
+	String *noKeyErr;
+
+	String *synTaxErr;	
+
+} ReplyInfo;
+
+void initServerConfig(int argc, char **argv);
 
 void initServerFacility();
 

@@ -77,3 +77,5 @@ void createFileEvent(EventLoop *eventLoop, int fd, int mask, FileProcessor proce
 
 void createTimeEvent(EventLoop *eventLoop, TimeProcessor processor, u64 time, Object *client);
 
+void deleteFileEvent(EventLoop *eventLoop, int fd, int mask);
+

@@ -22,6 +22,8 @@ static u32 putInner(HashMap *this, Object *key, Object *value);
 
 static void reBuildMap(HashMap *this, Entry **table, Entry *entry, u32 capacity);
 
+static Entry* getEntryByKey(HashMap *this, Object *key);
+
 HashMap* createHashMap(HashCode hashCode, EqualFun equalFun, u32 capacity) {
 	if (hashCode!=NULL && capacity>0) {
 		HashMap *map = (HashMap *)malloc(sizeof(HashMap));
@@ -165,15 +167,20 @@ static u32 reHash(HashMap *this) {
 }
 
 static u32 putInner(HashMap *this, Object *key, Object *value) {
-	int hashCode = this->hashCode(key);
-	u32 index = (hashCode & (this->capacity-1));
-	Entry *old = this->table[index];
-	Entry *entry = (Entry *)malloc(sizeof(Entry));
-	entry->key = key;
-	entry->value = value;
-	entry->next = old;
-	this->table[index] = entry;
-	return STATUS_SUCCESS;
+	Entry *entry = getEntryByKey(this, key);
+	if (entry!=NULL) {
+		entry->value = value;
+	} else {
+		int hashCode = this->hashCode(key);
+		u32 index = (hashCode & (this->capacity-1));
+		Entry *old = this->table[index];
+		Entry *entry = (Entry *)malloc(sizeof(Entry));
+		entry->key = key;
+		entry->value = value;
+		entry->next = old;
+		this->table[index] = entry;
+		return STATUS_SUCCESS;
+	}
 }
 
 static void reBuildMap(HashMap *this, Entry **table, Entry *entry, u32 capacity) {
@@ -185,6 +192,21 @@ static void reBuildMap(HashMap *this, Entry **table, Entry *entry, u32 capacity)
 	}
 }
 
+static Entry* getEntryByKey(HashMap *this, Object *key) {
+	if (this!=NULL && key!=NULL) {
+		int hashCode = this->hashCode(key);
+		u32 index = (hashCode & (this->capacity-1));
+		Entry *entry = this->table[index];
+		while(entry!=NULL) {
+			if (this->equalFun(entry->key, key)) {
+				return entry;			
+			}
+			entry = entry->next;		
+		}
+	}
+	return NULL;
+}
+
 static void printHashMap(HashMap *this) {
 	if (this!=NULL) {
 		u32 i=0;
@@ -192,7 +214,7 @@ static void printHashMap(HashMap *this) {
 			printf("Index:%2d ", i);
 			Entry *entry = this->table[i];
 			while (entry!=NULL) {
-				printf("#");
+				printf("(%s,%s)", (char *)entry->key, (char *)entry->value);
 				entry = entry->next;			
 			}
 			printf("\n");

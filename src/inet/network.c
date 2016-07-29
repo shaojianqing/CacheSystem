@@ -9,6 +9,8 @@
 
 #include "../type/type.h"
 #include "../event/event.h"
+#include "../data/hashMap.h"
+#include "../cache/cacheDB.h"
 #include "../config/config.h"
 #include "../const/const.h"
 #include "network.h"
@@ -43,7 +45,7 @@ int prepareServerSocket() {
 	
 	serverAddress.sin_family = AF_INET;
 	serverAddress.sin_addr.s_addr = htonl(INADDR_ANY);
-	serverAddress.sin_port = htons(SERVER_PORT);
+	serverAddress.sin_port = htons(server.serverPort);
 
 	int status = bind(serverSocketFd, (SocketAddress *)&serverAddress, sizeof(SocketAddress));
 	if (status==-1) {

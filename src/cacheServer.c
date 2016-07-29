@@ -6,38 +6,25 @@
 #include "type/type.h"
 #include "event/event.h"
 #include "config/config.h"
-#include "data/dataType.h"
-#include "data/hashMap.h"
-#include "data/arrayList.h"
 #include "cacheServer.h"
 
 extern Server server;
 
 int main(int argc, char **argv) {
 
-	initServerConfig();
-	if (argc==2) {
-		char *content = argv[1];
-		if (strcmp(content, "-h")==0) {
-			printHelpInfo();
-			exit(0);		
-		} else {
-			char *configFilename = content;
-			loadServerConfig(configFilename);		
-		}		
-	} else if (argc==1) {
-		char *info = "No config file is specified, the server will load the default config!";
-		printLog(LEVEL_WARN, info);
-	} else {
-		char *info = "The input command is invalid!";
-		printLog(LEVEL_ERROR, info);
-	}
+	/*String *name = createString("shaojianqing");
 
+	String *subName = name->subString(name, 2, 8);
+
+	String *catName = createString("TestTestTestTestTestTestTest");
+
+	String *newName = name->catString(name, catName);	
+
+	printf("The String is:%s the length is:%d\n", newName->value, newName->length);
+
+	printLog(LEVEL_INFO, newName->value);*/
+
+	initServerConfig(argc, argv);
 	initServerFacility();
-	//startDataService();
 	executeEventLoop(server.eventLoop);
-	
-	//startDataService();
-
-	printLog(LEVEL_INFO, "Cache Service is now running^_^");
 }
