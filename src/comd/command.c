@@ -10,6 +10,8 @@
 #include "../config/config.h"
 #include "command.h"
 
+char sendBuffer[1024];
+
 extern Server server;
 
 extern ReplyInfo replyInfo;;
@@ -68,4 +70,13 @@ static void getCommand(Client *client) {
 	CacheDB *cacheDB = server.cacheDB;
 	String *keyStr = client->params[1];
 	char *value = cacheDB->get(cacheDB, keyStr->value);
+	memset(sendBuffer, 0, sizeof(sendBuffer));
+	if (value!=NULL) {			
+		sprintf(sendBuffer, "$%ld\r\n%s\r\n", strlen(value), value);
+	} else {
+		sprintf(sendBuffer, "$-1\r\n");	
+	}
+
+	String *result = createString(sendBuffer);
+	client->replyToClient(client, result);
 }
