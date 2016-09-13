@@ -4,12 +4,6 @@
 
 #define TIME_SLICE			100
 
-typedef struct EventLoop EventLoop;
-
-typedef struct CacheDB CacheDB;
-
-typedef struct String String;
-
 typedef struct Server {
 
 	u32 serverPort;

@@ -1,11 +1,9 @@
-#include "../const/const.h"
-#include "../type/type.h"
 
 #define DEFALUT_STRING_SPACE		16
 
 typedef struct String String;
 
-typedef struct String {
+struct String {
 	
 	int length;
 
@@ -21,7 +19,7 @@ typedef struct String {
 
 	String* (*catString)(String *this, String *string);
 
-} String;
+};
 
 String* createString(char *value);
 

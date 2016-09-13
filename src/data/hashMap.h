@@ -1,6 +1,3 @@
-#include "../const/const.h"
-#include "../type/type.h"
-#include "dataType.h"
 
 #define LIMIT_FACTOR 0.75
 
@@ -9,19 +6,18 @@
 
 typedef struct Entry Entry;
 
-typedef struct Entry {
+typedef struct HashMap HashMap;
+
+struct Entry {
 	
 	Object *key;
 	
 	Object *value;
 
 	Entry *next;	
+};
 
-} Entry;
-
-typedef struct HashMap HashMap;
-
-typedef struct HashMap {
+struct HashMap {
 	
 	Entry **table;
 
@@ -46,8 +42,7 @@ typedef struct HashMap {
 	HashCode hashCode;
 
 	EqualFun equalFun;
-	
-} HashMap;
+};
 
 HashMap* createHashMap(HashCode hashCode, EqualFun equalFun, u32 capacity);
 

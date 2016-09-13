@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <memory.h>
 
+#include "../const/const.h"
+#include "../type/type.h"
+#include "dataType.h"
 #include "hashMap.h"
 
 static u32 put(HashMap *this, Object *key, Object *value);

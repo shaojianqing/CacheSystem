@@ -1,8 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
+#include <sys/epoll.h>
 
 #include "../type/type.h"
+#include "../event/event.h"
+#include "../data/dataType.h"
 #include "../data/hashMap.h"
 #include "../cache/cacheDB.h"
 #include "../data/stringType.h"

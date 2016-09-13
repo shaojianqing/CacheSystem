@@ -13,13 +13,17 @@ typedef struct FileEvent FileEvent;
 
 typedef struct TimeEvent TimeEvent;
 
+typedef struct FireEvent FireEvent;
+
 typedef struct epoll_event EpollEvent;
+
+typedef struct EpollState EpollState;
 
 typedef void (*FileProcessor)(EventLoop *eventLoop, int fd, int mask, Object *client);
 
 typedef void (*TimeProcessor)(EventLoop *eventLoop, TimeEvent *timeEvent, Object *client);
 
-typedef struct FileEvent {
+struct FileEvent {
 
 	int fd;
 
@@ -30,34 +34,30 @@ typedef struct FileEvent {
 	FileProcessor readFileProcessor;
 	
 	FileProcessor writeFileProcessor;
+};
 
-} FileEvent;
-
-typedef struct TimeEvent {
+struct TimeEvent {
 	
 	u64 time;
 
 	TimeProcessor timeProcessor;
-	
-} TimeEvent;
+};
 
-typedef struct FireEvent {
+struct FireEvent {
 
 	int fd;
 
-	int mask;	
+	int mask;
+};
 
-} FireEvent;
-
-typedef struct EpollState {
+struct EpollState {
 
 	int epollFd;
 
 	EpollEvent epollEvents[EVENT_SIZE];
+};
 
-} EpollState;
-
-typedef struct EventLoop {
+struct EventLoop {
 
 	EpollState *epollState;
 
@@ -66,8 +66,7 @@ typedef struct EventLoop {
 	FileEvent fileEventList[EVENT_SIZE];
 
 	FireEvent fireEventList[EVENT_SIZE];
-	
-} EventLoop;
+};
 
 EventLoop *createEventLoop();
 

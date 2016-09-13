@@ -6,8 +6,11 @@
 
 #include "../type/type.h"
 #include "../event/event.h"
-#include "../config/config.h"
+#include "../data/dataType.h"
 #include "../data/stringType.h"
+#include "../data/hashMap.h"
+#include "../cache/cacheDB.h"
+#include "../config/config.h"
 #include "client.h"
 
 extern Server server;

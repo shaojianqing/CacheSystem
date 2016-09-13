@@ -3,6 +3,9 @@
 #include <memory.h>
 #include <string.h>
 
+#include "../const/const.h"
+#include "../type/type.h"
+#include "dataType.h"
 #include "arrayList.h"
 
 static u32 getSize(ArrayList *this);

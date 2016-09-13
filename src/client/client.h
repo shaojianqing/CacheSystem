@@ -1,13 +1,9 @@
 
-typedef struct EventLoop EventLoop;
-
-typedef struct String String;
-
 typedef struct Client Client;
 
 typedef void (*ReplyToClient)(Client *client, String *info);
 
-typedef struct Client {
+struct Client {
 
 	int clientFd;
 
@@ -18,8 +14,7 @@ typedef struct Client {
 	String *replyInfo;
 
 	ReplyToClient replyToClient;
-	
-} Client;
+};
 
 Client *createClient(int clientFd);
 

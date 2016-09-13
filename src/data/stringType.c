@@ -3,6 +3,8 @@
 #include <memory.h>
 #include <string.h>
 
+#include "../const/const.h"
+#include "../type/type.h"
 #include "stringType.h"
 
 static void bindFunction(String *this);

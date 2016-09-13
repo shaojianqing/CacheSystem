@@ -1,5 +1,7 @@
 #include <string.h>
 
+#include "../const/const.h"
+#include "../type/type.h"
 #include "dataType.h"
 
 int StringHashCode(Object *string) {

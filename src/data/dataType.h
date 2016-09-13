@@ -1,5 +1,3 @@
-#include "../const/const.h"
-#include "../type/type.h"
 
 typedef int (*HashCode)(Object *key);
 

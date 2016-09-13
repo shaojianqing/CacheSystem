@@ -1,10 +1,7 @@
-#include "../const/const.h"
-#include "../type/type.h"
-#include "dataType.h"
 
 typedef struct ArrayList ArrayList;
 
-typedef struct ArrayList {
+struct ArrayList {
 	
 	Object **list;
 
@@ -24,7 +21,7 @@ typedef struct ArrayList {
 
 	EqualFun equalFun;
 
-} ArrayList;
+};
 
 ArrayList *createArrayList(EqualFun equalFun, u32 capacity);
 
